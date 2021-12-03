@@ -1,6 +1,32 @@
 const std = @import("std");
 
 pub fn main() anyerror!void {
+    try partOne();
+    try partTwo();
+}
+
+fn partOne() !void {
+    var file = try std.fs.cwd().openFile("input.txt", .{ .read = true });
+    defer file.close();
+
+    var reader = file.reader();
+    var buf: [2000]u8 = undefined;
+    var count: usize = 0;
+    var previous_num: usize = 0;
+
+    while (try reader.readUntilDelimiterOrEof(&buf, '\n')) |line| {
+        const current_num = try std.fmt.parseInt(usize, line, 10);
+        if (previous_num > 0) {
+            if (current_num > previous_num)
+                count += 1;
+        }
+        previous_num = current_num;
+    }
+
+    std.debug.print("Part One: {d}\n", .{count});
+}
+
+fn partTwo() !void {
     var file = try std.fs.cwd().openFile("input.txt", .{ .read = true });
     defer file.close();
 
@@ -16,8 +42,7 @@ pub fn main() anyerror!void {
 
     var count: usize = 0;
     var index: usize = 0;
-    var sums = std.ArrayList(usize).init(std.heap.page_allocator);
-    defer sums.deinit();
+    var previous_sum: usize = 0;
 
     while (index < nums.items.len) : (index += 1) {
         // there aren't enough measurements left to create a new three-measurement sum
@@ -28,18 +53,13 @@ pub fn main() anyerror!void {
         const second_num = nums.items[index + 1];
         const third_num = nums.items[index + 2];
 
-        const sum_of_three = current_num + second_num + third_num;
-        try sums.append(sum_of_three);
+        const current_sum = current_num + second_num + third_num;
+        if (previous_sum > 0) {
+            if (current_sum > previous_sum)
+                count += 1;
+        }
+        previous_sum = current_sum;
     }
 
-    index = 1;
-    while (index < sums.items.len) : (index += 1) {
-        const prev_num = sums.items[index - 1];
-        const current_num = sums.items[index];
-
-        if (current_num > prev_num)
-            count += 1;
-    }
-
-    std.debug.print("{d}\n", .{count});
+    std.debug.print("Part Two: {d}\n", .{count});
 }
