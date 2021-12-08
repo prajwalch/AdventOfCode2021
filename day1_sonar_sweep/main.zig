@@ -6,15 +6,13 @@ pub fn main() anyerror!void {
 }
 
 fn partOne() !void {
-    var file = try std.fs.cwd().openFile("input.txt", .{ .read = true });
-    defer file.close();
+    var input = @embedFile("input.txt");
+    var input_iter = std.mem.tokenize(input, "\n");
 
-    var reader = file.reader();
-    var buf: [2000]u8 = undefined;
     var count: usize = 0;
     var previous_num: usize = 0;
 
-    while (try reader.readUntilDelimiterOrEof(&buf, '\n')) |line| {
+    while (input_iter.next()) |line| {
         const current_num = try std.fmt.parseInt(usize, line, 10);
         if (previous_num > 0) {
             if (current_num > previous_num)
@@ -27,15 +25,13 @@ fn partOne() !void {
 }
 
 fn partTwo() !void {
-    var file = try std.fs.cwd().openFile("input.txt", .{ .read = true });
-    defer file.close();
+    var input = @embedFile("input.txt");
+    var input_iter = std.mem.tokenize(input, "\n");
 
-    var reader = file.reader();
-    var buf: [2000]u8 = undefined;
     var nums = std.ArrayList(usize).init(std.heap.page_allocator);
     defer nums.deinit();
 
-    while (try reader.readUntilDelimiterOrEof(&buf, '\n')) |line| {
+    while (input_iter.next()) |line| {
         const measurement = try std.fmt.parseInt(usize, line, 10);
         try nums.append(measurement);
     }
