@@ -16,6 +16,7 @@ const Cell = struct {
 
 pub fn main() anyerror!void {
     try partOne();
+    try partTwo();
 }
 
 fn partOne() !void {
@@ -47,13 +48,48 @@ fn partOne() !void {
     }
 }
 
+fn partTwo() !void {
+    var input = @embedFile("input.txt");
+    var input_iter = std.mem.tokenize(input, "\n ");
+
+    var boards = Boards.init(std.heap.page_allocator);
+    defer boards.deinit();
+
+    var board_moves = input_iter.next().?;
+    var board_moves_iter = std.mem.tokenize(board_moves, ",");
+
+    var boards_layout = input_iter.rest();
+    var boards_layout_iter = std.mem.split(boards_layout, "\n\n");
+
+    while (boards_layout_iter.next()) |layout| {
+        try parseAndMakeBoard(layout, &boards);
+    }
+
+    var winners: [100]usize = undefined;
+    var winners_idx: usize = 0;
+
+    while (board_moves_iter.next()) |move| {
+        var move_num = try std.fmt.parseInt(isize, move, 10);
+        markNum(move_num, &boards);
+
+        findWinnerBoard(&boards, &winners, &winners_idx);
+
+        if (winners_idx == boards.items.len) {
+            var last_winner = boards.items[winners[winners_idx - 1]];
+            var sum = getSum(last_winner);
+            std.debug.print("Part Two: {d}*{d} = {d}\n", .{ sum, move_num, sum * move_num });
+            return;
+        }
+    }
+}
+
 fn parseAndMakeBoard(layout: []const u8, boards: *Boards) !void {
-    var board = [_][5]Cell{
-        [_]Cell{.{}} ** 5,
-        [_]Cell{.{}} ** 5,
-        [_]Cell{.{}} ** 5,
-        [_]Cell{.{}} ** 5,
-        [_]Cell{.{}} ** 5,
+    var board = [_][BOARD_SIZE]Cell{
+        [_]Cell{.{}} ** BOARD_SIZE,
+        [_]Cell{.{}} ** BOARD_SIZE,
+        [_]Cell{.{}} ** BOARD_SIZE,
+        [_]Cell{.{}} ** BOARD_SIZE,
+        [_]Cell{.{}} ** BOARD_SIZE,
     };
 
     var layout_nums_line = std.mem.tokenize(layout, "\n");
@@ -98,22 +134,22 @@ fn checkWinner(boards: *Boards) ?isize {
     return null;
 }
 
-fn isBoardWin(board: [5][5]Cell) bool {
+fn isBoardWin(board: [BOARD_SIZE][BOARD_SIZE]Cell) bool {
     var i: usize = 0;
     var j: usize = 0;
 
-    while (i < 5) : (i += 1) {
+    while (i < BOARD_SIZE) : (i += 1) {
         j = 0;
-        while (j < 5) : (j += 1) {
+        while (j < BOARD_SIZE) : (j += 1) {
             if (!board[i][j].is_marked) break;
         }
-        if (j >= 5) return true;
+        if (j >= BOARD_SIZE) return true;
 
         j = 0;
-        while (j < 5) : (j += 1) {
+        while (j < BOARD_SIZE) : (j += 1) {
             if (!board[j][i].is_marked) break;
         }
-        if (j >= 5) return true;
+        if (j >= BOARD_SIZE) return true;
     }
     return false;
 }
@@ -135,7 +171,7 @@ fn dumpBoard(boards: *Boards) void {
     std.debug.print("------\n", .{});
 }
 
-fn getSum(board: [5][5]Cell) isize {
+fn getSum(board: [BOARD_SIZE][BOARD_SIZE]Cell) isize {
     var sum: isize = 0;
 
     for (board) |*row, _| {
@@ -145,4 +181,23 @@ fn getSum(board: [5][5]Cell) isize {
         }
     }
     return sum;
+}
+
+fn isAlreadyChecked(idx: usize, winners: *[100]usize) bool {
+    for (winners) |winner_idx, _| {
+        if (winner_idx == idx) return true;
+    }
+    return false;
+}
+
+fn findWinnerBoard(boards: *Boards, winners: *[100]usize, winners_idx: *usize) void {
+    for (boards.items) |board, idx| {
+        if (isAlreadyChecked(idx, winners))
+            continue;
+
+        if (isBoardWin(board)) {
+            winners[winners_idx.*] = idx;
+            winners_idx.* += 1;
+        }
+    }
 }
