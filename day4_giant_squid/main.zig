@@ -48,12 +48,12 @@ fn partOne() !void {
 }
 
 fn parseAndMakeBoard(layout: []const u8, boards: *Boards) !void {
-    var board = [_][5]Cell{
-        [_]Cell{.{}} ** 5,
-        [_]Cell{.{}} ** 5,
-        [_]Cell{.{}} ** 5,
-        [_]Cell{.{}} ** 5,
-        [_]Cell{.{}} ** 5,
+    var board = [_][BOARD_SIZE]Cell{
+        [_]Cell{.{}} ** BOARD_SIZE,
+        [_]Cell{.{}} ** BOARD_SIZE,
+        [_]Cell{.{}} ** BOARD_SIZE,
+        [_]Cell{.{}} ** BOARD_SIZE,
+        [_]Cell{.{}} ** BOARD_SIZE,
     };
 
     var layout_nums_line = std.mem.tokenize(layout, "\n");
@@ -98,22 +98,22 @@ fn checkWinner(boards: *Boards) ?isize {
     return null;
 }
 
-fn isBoardWin(board: [5][5]Cell) bool {
+fn isBoardWin(board: [BOARD_SIZE][BOARD_SIZE]Cell) bool {
     var i: usize = 0;
     var j: usize = 0;
 
-    while (i < 5) : (i += 1) {
+    while (i < BOARD_SIZE) : (i += 1) {
         j = 0;
-        while (j < 5) : (j += 1) {
+        while (j < BOARD_SIZE) : (j += 1) {
             if (!board[i][j].is_marked) break;
         }
-        if (j >= 5) return true;
+        if (j >= BOARD_SIZE) return true;
 
         j = 0;
-        while (j < 5) : (j += 1) {
+        while (j < BOARD_SIZE) : (j += 1) {
             if (!board[j][i].is_marked) break;
         }
-        if (j >= 5) return true;
+        if (j >= BOARD_SIZE) return true;
     }
     return false;
 }
@@ -135,7 +135,7 @@ fn dumpBoard(boards: *Boards) void {
     std.debug.print("------\n", .{});
 }
 
-fn getSum(board: [5][5]Cell) isize {
+fn getSum(board: [BOARD_SIZE][BOARD_SIZE]Cell) isize {
     var sum: isize = 0;
 
     for (board) |*row, _| {
