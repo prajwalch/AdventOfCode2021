@@ -1,7 +1,7 @@
 const std = @import("std");
 
-const GRID_SIZE: usize = 5;
-const Grids = std.ArrayList([GRID_SIZE][GRID_SIZE]Cell);
+const BOARD_SIZE: usize = 5;
+const Boards = std.ArrayList([BOARD_SIZE][BOARD_SIZE]Cell);
 
 const Cell = struct {
     num: isize = -1,
@@ -22,24 +22,24 @@ fn partOne() !void {
     var input = @embedFile("input.txt");
     var input_iter = std.mem.tokenize(input, "\n ");
 
-    var grids = Grids.init(std.heap.page_allocator);
-    defer grids.deinit();
+    var boards = Boards.init(std.heap.page_allocator);
+    defer boards.deinit();
 
-    var grid_moves = input_iter.next().?;
-    var grid_moves_iter = std.mem.tokenize(grid_moves, ",");
+    var board_moves = input_iter.next().?;
+    var board_moves_iter = std.mem.tokenize(board_moves, ",");
 
-    var grids_layout = input_iter.rest();
-    var grids_layout_iter = std.mem.split(grids_layout, "\n\n");
+    var boards_layout = input_iter.rest();
+    var boards_layout_iter = std.mem.split(boards_layout, "\n\n");
 
-    while (grids_layout_iter.next()) |layout| {
-        try parseAndMakeGrid(layout, &grids);
+    while (boards_layout_iter.next()) |layout| {
+        try parseAndMakeBoard(layout, &boards);
     }
 
-    while (grid_moves_iter.next()) |move| {
+    while (board_moves_iter.next()) |move| {
         var move_num = try std.fmt.parseInt(isize, move, 10);
-        markNum(move_num, &grids);
-        //dumpGrid(&grids);
-        var winner = checkWinner(&grids);
+        markNum(move_num, &boards);
+        //dumpBoard(&boards);
+        var winner = checkWinner(&boards);
         if (winner) |sum| {
             std.debug.print("Part One: {d}*{d} = {d}\n", .{ sum, move_num, sum * move_num });
             return;
@@ -47,8 +47,8 @@ fn partOne() !void {
     }
 }
 
-fn parseAndMakeGrid(layout: []const u8, grids: *Grids) !void {
-    var grid = [_][5]Cell{
+fn parseAndMakeBoard(layout: []const u8, boards: *Boards) !void {
+    var board = [_][5]Cell{
         [_]Cell{.{}} ** 5,
         [_]Cell{.{}} ** 5,
         [_]Cell{.{}} ** 5,
@@ -64,7 +64,7 @@ fn parseAndMakeGrid(layout: []const u8, grids: *Grids) !void {
         while (nums_iter.next()) |num| {
             var parsed_num = try std.fmt.parseInt(isize, std.mem.trim(u8, num, " "), 10);
 
-            outer: for (grid) |*row, i| {
+            outer: for (board) |*row, i| {
                 for (row) |*cell, _| {
                     if (cell.num == -1) {
                         cell.num = parsed_num;
@@ -74,13 +74,13 @@ fn parseAndMakeGrid(layout: []const u8, grids: *Grids) !void {
             }
         }
     }
-    try grids.append(grid);
+    try boards.append(board);
 }
 
-fn markNum(num: isize, grids: *Grids) void {
-    for (grids.items) |*grid| {
-        for (grid) |_, i| {
-            for (grid[i]) |*cell, _| {
+fn markNum(num: isize, boards: *Boards) void {
+    for (boards.items) |*board| {
+        for (board) |_, i| {
+            for (board[i]) |*cell, _| {
                 if (cell.num == num and !cell.is_marked) {
                     cell.mark();
                 }
@@ -89,38 +89,38 @@ fn markNum(num: isize, grids: *Grids) void {
     }
 }
 
-fn checkWinner(grids: *Grids) ?isize {
-    for (grids.items) |grid| {
-        var current_grid = grid;
-        if (isGridWin(current_grid))
-            return getSum(current_grid);
+fn checkWinner(boards: *Boards) ?isize {
+    for (boards.items) |board| {
+        var current_board = board;
+        if (isBoardWin(current_board))
+            return getSum(current_board);
     }
     return null;
 }
 
-fn isGridWin(grid: [5][5]Cell) bool {
+fn isBoardWin(board: [5][5]Cell) bool {
     var i: usize = 0;
     var j: usize = 0;
 
     while (i < 5) : (i += 1) {
         j = 0;
         while (j < 5) : (j += 1) {
-            if (!grid[i][j].is_marked) break;
+            if (!board[i][j].is_marked) break;
         }
         if (j >= 5) return true;
 
         j = 0;
         while (j < 5) : (j += 1) {
-            if (!grid[j][i].is_marked) break;
+            if (!board[j][i].is_marked) break;
         }
         if (j >= 5) return true;
     }
     return false;
 }
 
-fn dumpGrid(grids: *Grids) void {
-    for (grids.items) |grid| {
-        for (grid) |*row, _| {
+fn dumpBoard(boards: *Boards) void {
+    for (boards.items) |board| {
+        for (board) |*row, _| {
             for (row) |*cell, _| {
                 if (cell.is_marked) {
                     std.debug.print("[{d}]  ", .{cell.num});
@@ -135,10 +135,10 @@ fn dumpGrid(grids: *Grids) void {
     std.debug.print("------\n", .{});
 }
 
-fn getSum(grid: [5][5]Cell) isize {
+fn getSum(board: [5][5]Cell) isize {
     var sum: isize = 0;
 
-    for (grid) |*row, _| {
+    for (board) |*row, _| {
         for (row) |*cell, _| {
             if (!cell.is_marked)
                 sum += cell.num;
